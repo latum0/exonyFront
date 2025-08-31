@@ -1,5 +1,5 @@
 import {
-  Card, CardHeader, CardTitle, CardDescription,
+  Card, CardHeader, CardDescription,
   CardContent, CardFooter,
 } from "@/components/ui/card";
 import LoginForm from "@/components/auth/LoginForm";
@@ -10,18 +10,18 @@ export default function LoginPage() {
   const { login } = useLogin();
   const navigate = useNavigate();
 
-  const handleLogin = async (formData) => {
+  const handleLogin = async (formData: any) => {
     try {
       await login(formData);
-    } catch (error) {
+    } catch (error: any) {
       alert(error.message);
     }
   };
 
   return (
     <div className="relative w-screen h-screen bg-gray-50 flex items-center justify-center overflow-hidden">
-     
-    {/* Logos flottants */}
+
+      {/* Logos flottants */}
       <div className="absolute inset-0 z-0 pointer-events-none">
         {[...Array(6)].map((_, i) => (
           <img

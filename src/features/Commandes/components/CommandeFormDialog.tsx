@@ -4,10 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Minus, Trash2 } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 import api from "@/api/axios";
+import type { CommandeResponseDto } from "@/hooks/useCommandes";
 
 // Schéma de validation Zod
 const ligneCommandeSchema = z.object({
@@ -20,14 +21,13 @@ const commandeSchema = z.object({
   dateCommande: z.string().min(1, "La date de commande est requise"),
   statut: z.enum(["EN_ATTENTE", "EN_COURS", "LIVREE", "ANNULEE"]),
   adresseLivraison: z.string().min(1, "L'adresse de livraison est requise"),
-  clientId: z.number({ 
+  clientId: z.number({
     invalid_type_error: "Le client est requis",
     required_error: "Le client est requis"
   }).min(1, "Le client est requis"),
   lignes: z.array(ligneCommandeSchema).min(1, "Au moins une ligne de commande est requise"),
 });
 
-type CommandeFormValues = z.infer<typeof commandeSchema>;
 
 interface Client {
   id: number;
@@ -125,7 +125,7 @@ export const CommandeFormDialog: React.FC<CommandeFormDialogProps> = ({
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
-    
+
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: "" }));
     }
@@ -133,7 +133,7 @@ export const CommandeFormDialog: React.FC<CommandeFormDialogProps> = ({
 
   const handleSelectChange = (name: string, value: string) => {
     setFormData(prev => ({ ...prev, [name]: value }));
-    
+
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: "" }));
     }
@@ -142,7 +142,7 @@ export const CommandeFormDialog: React.FC<CommandeFormDialogProps> = ({
   const addLigne = () => {
     // Trouver le produit sélectionné
     const produitSelectionne = produits.find(p => p.id === newLigne.produitId);
-    
+
     // Vérifier si la quantité demandée est disponible
     if (produitSelectionne && newLigne.quantite > produitSelectionne.quantite) {
       toast.error("Stock insuffisant", {
@@ -161,7 +161,7 @@ export const CommandeFormDialog: React.FC<CommandeFormDialogProps> = ({
       ligneValidation.error.errors.forEach(error => {
         newErrors[error.path[0]] = error.message;
       });
-      
+
       toast.error("Erreur de validation", {
         description: "Veuillez corriger les erreurs dans la ligne avant de l'ajouter",
       });
@@ -181,7 +181,7 @@ export const CommandeFormDialog: React.FC<CommandeFormDialogProps> = ({
       ...prev,
       lignes: prev.lignes.filter((_, i) => i !== index),
     }));
-    
+
     setLigneErrors(prev => {
       const newErrors = { ...prev };
       delete newErrors[index];
@@ -191,7 +191,7 @@ export const CommandeFormDialog: React.FC<CommandeFormDialogProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     const submitData = {
       dateCommande: formData.dateCommande,
       statut: formData.statut,
@@ -205,15 +205,15 @@ export const CommandeFormDialog: React.FC<CommandeFormDialogProps> = ({
     if (!validationResult.success) {
       const newErrors: Record<string, string> = {};
       const newLigneErrors: Record<number, Record<string, string>> = {};
-      
+
       validationResult.error.errors.forEach(error => {
         const path = error.path.join('.');
-        
+
         if (path.startsWith('lignes.')) {
           const pathParts = path.split('.');
           const ligneIndex = parseInt(pathParts[1]);
           const fieldName = pathParts[2];
-          
+
           if (!isNaN(ligneIndex)) {
             if (!newLigneErrors[ligneIndex]) {
               newLigneErrors[ligneIndex] = {};
@@ -227,7 +227,7 @@ export const CommandeFormDialog: React.FC<CommandeFormDialogProps> = ({
 
       setErrors(newErrors);
       setLigneErrors(newLigneErrors);
-      
+
       toast.error("Erreur de validation", {
         description: "Veuillez corriger les erreurs dans le formulaire",
       });
@@ -264,14 +264,14 @@ export const CommandeFormDialog: React.FC<CommandeFormDialogProps> = ({
   const handleQuantiteChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const nouvelleQuantite = parseInt(e.target.value) || 1;
     const stockMax = newLigne.produitId ? getStockDisponible(newLigne.produitId) : 0;
-    
+
     // Si le produit est sélectionné, limiter à la quantité disponible
-    const quantiteFinale = newLigne.produitId 
+    const quantiteFinale = newLigne.produitId
       ? Math.min(Math.max(1, nouvelleQuantite), stockMax)
       : Math.max(1, nouvelleQuantite);
-    
-    setNewLigne(prev => ({ 
-      ...prev, 
+
+    setNewLigne(prev => ({
+      ...prev,
       quantite: quantiteFinale
     }));
   };
@@ -288,7 +288,7 @@ export const CommandeFormDialog: React.FC<CommandeFormDialogProps> = ({
             {initialData ? "Modifier la commande" : "Créer une nouvelle commande"}
           </DialogTitle>
         </DialogHeader>
-        
+
         {loading ? (
           <div className="flex justify-center items-center py-8">
             <p>Chargement des données...</p>
@@ -371,15 +371,15 @@ export const CommandeFormDialog: React.FC<CommandeFormDialogProps> = ({
 
             <div className="space-y-4">
               <Label>Lignes de commande *</Label>
-              
+
               <div className="grid grid-cols-1 sm:grid-cols-5 gap-2">
                 <div className="sm:col-span-3">
                   <Select
                     value={newLigne.produitId}
                     onValueChange={(value) => {
                       const produit = produits.find(p => p.id === value);
-                      setNewLigne(prev => ({ 
-                        ...prev, 
+                      setNewLigne(prev => ({
+                        ...prev,
                         produitId: value,
                         // Réinitialiser la quantité à 1 ou au maximum disponible
                         quantite: 1
@@ -393,8 +393,8 @@ export const CommandeFormDialog: React.FC<CommandeFormDialogProps> = ({
                       {produits.map((produit) => {
                         const estEnStock = produit.quantite > 0;
                         return (
-                          <SelectItem 
-                            key={produit.id} 
+                          <SelectItem
+                            key={produit.id}
                             value={produit.id}
                             disabled={!estEnStock}
                             className={!estEnStock ? "text-red-500 opacity-50" : ""}
@@ -406,7 +406,7 @@ export const CommandeFormDialog: React.FC<CommandeFormDialogProps> = ({
                     </SelectContent>
                   </Select>
                 </div>
-                
+
                 <div className="sm:col-span-1">
                   <Input
                     type="number"
@@ -423,11 +423,11 @@ export const CommandeFormDialog: React.FC<CommandeFormDialogProps> = ({
                     </p>
                   )}
                 </div>
-                
+
                 <div className="sm:col-span-1">
-                  <Button 
-                    type="button" 
-                    onClick={addLigne} 
+                  <Button
+                    type="button"
+                    onClick={addLigne}
                     className="flex items-center gap-1 w-full justify-center"
                     disabled={!newLigne.produitId}
                   >
@@ -448,9 +448,9 @@ export const CommandeFormDialog: React.FC<CommandeFormDialogProps> = ({
                       <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded">
                         <div className="flex-1">
                           <span className="text-sm block">
-                            Produit: {produit ? produit.nom : `ID: ${ligne.produitId}`} - 
-                            Quantité: {ligne.quantite} - 
-                            Prix unitaire: {produit ? `${produit.prix}€` : 'N/A'} - 
+                            Produit: {produit ? produit.nom : `ID: ${ligne.produitId}`} -
+                            Quantité: {ligne.quantite} -
+                            Prix unitaire: {produit ? `${produit.prix}€` : 'N/A'} -
                             Total: {produit ? `${(produit.prix * ligne.quantite).toFixed(2)}€` : 'N/A'}
                           </span>
                           {ligneErrors[index]?.produitId && (

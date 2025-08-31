@@ -85,6 +85,14 @@ export default function ProduitDetailPage() {
     });
   };
 
+  const fournisseursArray = Array.isArray(produit.fournisseurs)
+    ? produit.fournisseurs
+    : produit.fournisseurs
+      ? [produit.fournisseurs]
+      : [];
+  const fournisseursLength = fournisseursArray.length;
+
+
   return (
     <div className="min-h-screen bg-white">
       <div className="max-w-7xl mx-auto p-6 py-8">
@@ -113,11 +121,10 @@ export default function ProduitDetailPage() {
                   <button
                     key={index}
                     onClick={() => setSelectedImageIndex(index)}
-                    className={`flex-shrink-0 w-20 h-20  ml-0.5 mt-0.5 rounded-xl overflow-hidden border-2 transition-all duration-200 ${
-                      selectedImageIndex === index
-                        ? "border-[#F8A67E] shadow-lg scale-105"
-                        : "border-slate-200 hover:border-[#F8A67E]/50"
-                    }`}
+                    className={`flex-shrink-0 w-20 h-20  ml-0.5 mt-0.5 rounded-xl overflow-hidden border-2 transition-all duration-200 ${selectedImageIndex === index
+                      ? "border-[#F8A67E] shadow-lg scale-105"
+                      : "border-slate-200 hover:border-[#F8A67E]/50"
+                      }`}
                   >
                     <img
                       src={`${API_BASE_URL}/uploads/produits/${image}`}
@@ -193,9 +200,8 @@ export default function ProduitDetailPage() {
                 </button>
               </div>
               <p
-                className={`text-slate-600 leading-relaxed transition-all ${
-                  isDescriptionExpanded ? "" : "line-clamp-3"
-                }`}
+                className={`text-slate-600 leading-relaxed transition-all ${isDescriptionExpanded ? "" : "line-clamp-3"
+                  }`}
               >
                 {produit.description}
               </p>
@@ -281,25 +287,26 @@ export default function ProduitDetailPage() {
           </div>
 
           {/* Suppliers */}
-          {produit.fournisseurs && produit.fournisseurs.length > 0 && (
+          {produit.fournisseurs && fournisseursArray.length > 0 && (
             <div className="bg-slate-50 rounded-2xl p-6  border border-slate-200/50">
               <h3 className="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
                 <Truck className="w-5 h-5 text-[#F8A67E]" />
                 Fournisseurs
               </h3>
               <div className="flex flex-wrap gap-3">
-                {produit.fournisseurs?.map(
-                  (fournisseur: Fournisseur, index: number) => (
-                    <div
-                      key={index}
-                      className="px-4 py-2 bg-gradient-to-r from-[#F8A67E]/10 to-[#F8A67E]/5 border border-[#F8A67E]/20 rounded-xl"
-                    >
-                      <span className="text-slate-700 font-medium">
-                        {fournisseur.nom || `Fournisseur ${index + 1}`}
-                      </span>
-                    </div>
-                  )
-                )}
+                {
+                  fournisseursArray.map(
+                    (fournisseur: Fournisseur, index: number) => (
+                      <div
+                        key={index}
+                        className="px-4 py-2 bg-gradient-to-r from-[#F8A67E]/10 to-[#F8A67E]/5 border border-[#F8A67E]/20 rounded-xl"
+                      >
+                        <span className="text-slate-700 font-medium">
+                          {fournisseur.nom || `Fournisseur ${index + 1}`}
+                        </span>
+                      </div>
+                    )
+                  )}
               </div>
             </div>
           )}

@@ -12,16 +12,18 @@ import { Button } from "@/components/ui/button";
 
 export function QRCodeCell({ value }: { value: string }) {
   const [open, setOpen] = useState(false);
-  const qrRef = useRef<SVGSVGElement | null>(null);
+  const qrContainerRef = useRef<HTMLDivElement | null>(null);
 
   if (!value) {
     return <span className="text-gray-400 text-sm">N/A</span>;
   }
 
   const handleDownload = () => {
-    if (!qrRef.current) return;
+    if (!qrContainerRef.current) return;
 
-    const svg = qrRef.current;
+    const svg = qrContainerRef.current.querySelector("svg");
+    if (!svg) return;
+
     const serializer = new XMLSerializer();
     const svgData = serializer.serializeToString(svg);
 
@@ -61,7 +63,9 @@ export function QRCodeCell({ value }: { value: string }) {
             <DialogTitle>Code QR</DialogTitle>
           </DialogHeader>
           <div className="flex flex-col items-center gap-4 p-4">
-            <QRCode ref={qrRef} value={value} size={256} />
+            <div ref={qrContainerRef}>
+              <QRCode value={value} size={256} />
+            </div>
             <Button onClick={handleDownload} className="w-fit h-10">
               Télécharger le QR Code
             </Button>

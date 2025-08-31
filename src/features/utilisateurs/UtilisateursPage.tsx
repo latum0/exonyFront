@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useAppDispatch, useAppSelector } from "@/hooks/redux-hooks";
 
 import { Button } from "@/components/ui/button";
-import { CogIcon, PlusCircleIcon, PlusIcon, UsersIcon } from "lucide-react";
+import { PlusCircleIcon, UsersIcon } from "lucide-react";
 import { UserTable } from "./components/UserTable";
 import UserFormDialog from "./components/UserFormDialog";
 

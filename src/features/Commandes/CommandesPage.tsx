@@ -1,5 +1,5 @@
 // src/pages/commandes/CommandesPage.tsx
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   PlusCircleIcon,
@@ -8,7 +8,7 @@ import {
   TrashIcon,
   Eye,
 } from "lucide-react";
-import { useCommandes } from "@/hooks/useCommandes";
+import { useCommandes, type CommandeResponseDto, type CreateCommandeDto, type UpdateCommandeDto } from "@/hooks/useCommandes";
 import {
   Table,
   TableBody,
@@ -65,19 +65,19 @@ export const CommandesPage = () => {
 
   const filteredCommandes = Array.isArray(commandes)
     ? commandes.filter((c) => {
-        const matchesGlobal = 
-          c.idCommande?.toLowerCase().includes(globalFilter.toLowerCase()) ||
-          c.adresseLivraison?.toLowerCase().includes(globalFilter.toLowerCase()) ||
-          c.montantTotal?.includes(globalFilter) ||
-          c.clientId?.toString().includes(globalFilter);
+      const matchesGlobal =
+        c.idCommande?.toLowerCase().includes(globalFilter.toLowerCase()) ||
+        c.adresseLivraison?.toLowerCase().includes(globalFilter.toLowerCase()) ||
+        c.montantTotal?.includes(globalFilter) ||
+        c.clientId?.toString().includes(globalFilter);
 
-        const matchesStatut = filters.statut ? c.statut === filters.statut : true;
-        const matchesClient = filters.clientId ? c.clientId.toString() === filters.clientId : true;
-        const matchesMinTotal = filters.minTotal ? parseFloat(c.montantTotal) >= parseFloat(filters.minTotal) : true;
-        const matchesMaxTotal = filters.maxTotal ? parseFloat(c.montantTotal) <= parseFloat(filters.maxTotal) : true;
+      const matchesStatut = filters.statut ? c.statut === filters.statut : true;
+      const matchesClient = filters.clientId ? c.clientId.toString() === filters.clientId : true;
+      const matchesMinTotal = filters.minTotal ? parseFloat(c.montantTotal) >= parseFloat(filters.minTotal) : true;
+      const matchesMaxTotal = filters.maxTotal ? parseFloat(c.montantTotal) <= parseFloat(filters.maxTotal) : true;
 
-        return matchesGlobal && matchesStatut && matchesClient && matchesMinTotal && matchesMaxTotal;
-      })
+      return matchesGlobal && matchesStatut && matchesClient && matchesMinTotal && matchesMaxTotal;
+    })
     : [];
 
   const pageCount = Math.ceil(filteredCommandes.length / pagination.pageSize);
@@ -158,7 +158,7 @@ export const CommandesPage = () => {
     });
   };
 
-   const statutOptions = [
+  const statutOptions = [
     { value: "EN_ATTENTE", label: "En attente" },
     { value: "EN_COURS", label: "En cours" },
     { value: "LIVREE", label: "Livrée" },
@@ -200,7 +200,7 @@ export const CommandesPage = () => {
             }}
             className="max-w-sm border-gray-300 rounded-md shadow-sm bg-neutral-50"
           />
-          
+
           <Select
             value={filters.statut}
             onValueChange={(value) => {
@@ -316,12 +316,11 @@ export const CommandesPage = () => {
                         {formatDate(c.dateCommande)}
                       </TableCell>
                       <TableCell className="py-3 px-4 whitespace-nowrap">
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          c.statut === "EN_ATTENTE" ? "bg-yellow-100 text-yellow-800" :
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${c.statut === "EN_ATTENTE" ? "bg-yellow-100 text-yellow-800" :
                           c.statut === "EN_COURS" ? "bg-blue-100 text-blue-800" :
-                          c.statut === "LIVREE" ? "bg-green-100 text-green-800" :
-                          "bg-red-100 text-red-800"
-                        }`}>
+                            c.statut === "LIVREE" ? "bg-green-100 text-green-800" :
+                              "bg-red-100 text-red-800"
+                          }`}>
                           {statutOptions.find(s => s.value === c.statut)?.label || c.statut}
                         </span>
                       </TableCell>

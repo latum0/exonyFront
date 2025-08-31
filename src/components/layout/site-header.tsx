@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Bell, Eye, Trash2, CheckCircle, AlertTriangle } from "lucide-react";
+import { Bell, Trash2, CheckCircle, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 
 export function SiteHeader() {

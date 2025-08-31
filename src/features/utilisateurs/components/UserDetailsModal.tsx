@@ -5,7 +5,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { User, Mail, Phone, Shield, Hash } from "lucide-react";
+import { User, Mail, Phone, Shield } from "lucide-react";
 
 interface User {
   id: number;
@@ -37,7 +37,7 @@ export default function UserDetailsModal({
 
         <div className="space-y-6">
           <div className="grid grid-cols-2 gap-4">
-           
+
             <div className="space-y-2">
               <div className="flex items-center gap-2 text-sm text-gray-500">
                 <User className="h-4 w-4" />
@@ -71,8 +71,8 @@ export default function UserDetailsModal({
             <div className="bg-gray-50 p-3 rounded-md">
               <div className="flex flex-wrap gap-2">
                 {user.permissions.map((permission, index) => (
-                  <span 
-                    key={index} 
+                  <span
+                    key={index}
                     className="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded"
                   >
                     {permission}
