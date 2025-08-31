@@ -119,7 +119,11 @@ export default function ModifierProduitPage() {
         images: [],
         keepImages: produit.images || [],
         fournisseurs:
-          produit.fournisseurs?.map((f: Fournisseur) => f.idFournisseur) || [],
+          Array.isArray(produit.fournisseurs)
+            ? produit.fournisseurs.map((f: Fournisseur) => f.idFournisseur)
+            : produit.fournisseurs
+              ? [produit.fournisseurs.idFournisseur]
+              : [],
       });
 
       setKeptImages(produit.images || []);

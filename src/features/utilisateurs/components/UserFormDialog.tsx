@@ -1,53 +1,69 @@
-import { useEffect, useState } from "react";
+"use client";
+
+import { useEffect } from "react";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useAppDispatch } from "@/hooks/redux-hooks";
-import { Check } from "lucide-react";
-import { createUser } from "@/hooks/usersHooks";
-import { useForm } from "react-hook-form";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectSeparator,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Edit2Icon, Plus, PlusCircle, X } from "lucide-react";
+import { useFieldArray, useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { updatePermissions } from "@/hooks/usersHooks";
+import { createClient, updateClient } from "@/hooks/clients-hook";
+import { useAppDispatch } from "@/hooks/redux-hooks";
 import { toast } from "sonner";
 
-const PERMISSIONS = ["ADMIN", "AGENT_DE_STOCK", "CONFIRMATEUR", "SAV"] as const;
+export const ClientStatut = z.enum(["ACTIVE", "BLACKLISTED"]);
 
-const schema = z.object({
-  name: z.string().min(1, "Le nom est requis"),
+const clientSchema = z.object({
+  nom: z.string().min(1, "Le nom est requis"),
+  prenom: z.string().min(1, "Le prénom est requis"),
+  adresse: z.string().min(1, "L'adresse est requise"),
   email: z.string().email("Email invalide"),
-  phone: z.string().min(1, "Téléphone requis"),
-  password: z
+  numeroTelephone: z
     .string()
-    .min(8, "Le mot de passe doit contenir au moins 8 caractères")
-    .regex(/[A-Z]/, "Le mot de passe doit contenir au moins une majuscule")
-    .regex(/[a-z]/, "Le mot de passe doit contenir au moins une minuscule")
-    .regex(/[0-9]/, "Le mot de passe doit contenir au moins un chiffre")
     .regex(
-      /[^A-Za-z0-9]/,
-      "Le mot de passe doit contenir au moins un caractère spécial"
+      /^\+213[5-7][0-9]{8}$/,
+      "Le numéro doit être au format algérien : +213XXXXXXXXX"
+    ),
+  commentaires: z
+    .array(
+      z.object({
+        contenu: z.string().optional(),
+      })
     )
-    .optional()
-    .or(z.literal("")),
-  permissions: z
-    .array(z.enum(PERMISSIONS))
-    .nonempty("Sélectionnez au moins une permission"),
+    .optional(),
+  statut: ClientStatut,
 });
 
-type FormValues = z.infer<typeof schema>;
+type FormValues = z.infer<typeof clientSchema>;
 
 type User = {
-  id?: number;
-  name: string;
+  idClient?: number;
+  nom: string;
+  prenom: string;
+  adresse: string;
   email: string;
-  phone: string;
-  permissions: string[];
+  numeroTelephone: string;
+  commentaires?: {
+    contenu: string;
+  }[];
+  statut: z.infer<typeof ClientStatut>;
 };
 
 type Props = {
@@ -57,9 +73,20 @@ type Props = {
   onSuccess?: () => void;
 };
 
+export interface ClientFormValues {
+  nom: string;
+  prenom: string;
+  adresse: string;
+  email: string;
+  numeroTelephone: string;
+  commentaires?: {
+    contenu: string;
+  }[];
+  statut: "ACTIVE" | "BLACKLISTED";
+}
+
 const UserFormDialog = ({ open, onClose, initialData, onSuccess }: Props) => {
   const dispatch = useAppDispatch();
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const {
     register,
@@ -67,259 +94,274 @@ const UserFormDialog = ({ open, onClose, initialData, onSuccess }: Props) => {
     setValue,
     watch,
     reset,
+    control,
     formState: { errors },
   } = useForm<FormValues>({
-    resolver: zodResolver(schema),
+    resolver: zodResolver(clientSchema),
     defaultValues: {
-      name: "",
+      nom: "",
+      prenom: "",
       email: "",
-      phone: "",
-      password: "",
-      permissions: [],
+      numeroTelephone: "",
+      adresse: "",
+      commentaires: [{ contenu: "" }],
+      statut: "ACTIVE",
     },
+  });
+
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: "commentaires",
   });
 
   useEffect(() => {
     if (initialData) {
       reset({
-        name: initialData.name,
+        nom: initialData.nom,
+        prenom: initialData.prenom,
+        adresse: initialData.adresse,
         email: initialData.email,
-        phone: initialData.phone,
-        password: "",
-        permissions: initialData.permissions as FormValues["permissions"],
+        numeroTelephone: initialData.numeroTelephone,
+        statut: initialData.statut,
+        commentaires:
+          initialData.commentaires && initialData.commentaires.length > 0
+            ? initialData.commentaires
+            : [{ contenu: "" }],
       });
     } else {
-      reset();
+      reset({
+        nom: "",
+        prenom: "",
+        email: "",
+        numeroTelephone: "",
+        adresse: "",
+        commentaires: [{ contenu: "" }],
+        statut: "ACTIVE",
+      });
     }
   }, [initialData, reset]);
 
-  const permissions = watch("permissions");
-
-  const togglePermission = (perm: (typeof PERMISSIONS)[number]) => {
-    const current = permissions.includes(perm);
-    const updated = current
-      ? permissions.filter((p) => p !== perm)
-      : [...permissions, perm];
-    setValue("permissions", updated);
-  };
-
   const onSubmit = async (data: FormValues) => {
-    setIsSubmitting(true);
+    const payload = {
+      ...data,
+      statut: data.statut,
+      commentaires: data.commentaires
+        ? data.commentaires.map((c) => ({
+          contenu: c.contenu ?? "",
+        }))
+        : undefined,
+    };
+
     try {
-      if (initialData?.id) {
-        await dispatch(
-          updatePermissions({ id: initialData.id, permissions: data.permissions })
+      if (initialData?.idClient) {
+        const result = await dispatch(
+          updateClient({ id: initialData.idClient, data: payload })
         ).unwrap();
-        toast.success("Permissions mises à jour avec succès !", {
-          description: `Les permissions de ${data.name} ont été modifiées.`,
-        });
+
+        // Type-safe access to result properties
+        if (result && typeof result === 'object') {
+
+          toast.success("Client modifié avec succès !", {
+            description: `Le client ${payload.nom} ${payload.prenom} a été mis à jour.`,
+          });
+        }
       } else {
-        await dispatch(createUser(data)).unwrap();
-        toast.success("Utilisateur créé avec succès !", {
-          description: `L'utilisateur ${data.name} a été ajouté.`,
-        });
+        const result = await dispatch(createClient(payload)).unwrap();
+
+        // Type-safe access to result properties
+        if (result && typeof result === 'object') {
+
+          toast.success("Client créé avec succès !", {
+            description: `Le client ${payload.nom} ${payload.prenom} a été ajouté.`,
+          });
+        }
       }
       onClose();
       onSuccess?.();
-    } catch (err: any) {
-      console.error("Erreur lors de la soumission:", err);
-      
-      // Extraction du message d'erreur
-      const errorMessage =
-        err?.payload?.message || // Pour les erreurs rejectWithValue de Redux
-        err?.response?.data?.message ||
-        err?.data?.message ||
-        err?.message ||
-        "Une erreur inconnue est survenue.";
+    } catch (err: unknown) {
+      // Proper error typing
+      let errorMessage = "Une erreur inconnue est survenue.";
+      let errorStatus: number | undefined;
 
-      // Gestion spécifique des erreurs de conflit
-      if (err?.payload?.status === 409 || err?.response?.status === 409 || err?.status === 409) {
+      if (err && typeof err === 'object') {
+        const error = err as any; // Type assertion for error handling
+        errorMessage = error?.data?.message || error?.message || errorMessage;
+        errorStatus = error?.status;
+      }
+
+      if (errorStatus === 409) {
         toast.error("Erreur de conflit", {
           description: errorMessage,
         });
       } else {
-        toast.error(`Erreur lors de ${initialData ? "la modification" : "l'ajout"} de l'utilisateur`, {
+        toast.error("Erreur lors de la soumission du client", {
           description: errorMessage,
         });
       }
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
   return (
-    <Dialog open={open} onOpenChange={(isOpen) => {
-      if (!isOpen) {
-        onClose();
-      }
-    }}>
-      <DialogContent>
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[600px] p-6">
         <DialogHeader>
-          <DialogTitle>
-            {initialData ? "Modifier l'utilisateur" : "Ajouter un utilisateur"}
+          <DialogTitle className="text-center w-full">
+            {initialData ? (
+              <span className="flex items-center ">
+                <Edit2Icon className="inline-block mr-1.5" /> Modifier le client
+              </span>
+            ) : (
+              <span className="flex items-center j">
+                <PlusCircle className="inline-block mr-1.5" /> Ajouter un client
+              </span>
+            )}
           </DialogTitle>
         </DialogHeader>
-
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          {initialData ? (
-            // 🔧 Mode modification : n'afficher que les permissions
-            <>
-              <div>
-                <Label className="block mb-2">Permissions</Label>
-                <div className="flex flex-wrap gap-2">
-                  {PERMISSIONS.map((perm) => {
-                    const checked = permissions.includes(perm);
-                    return (
-                      <label
-                        key={perm}
-                        onClick={() => togglePermission(perm)}
-                        className={`cursor-pointer px-3 py-2 rounded-full text-sm flex items-center gap-1
-                border transition duration-200
-                ${
-                  checked
-                    ? "bg-orange-100 border-orange-500 text-orange-700"
-                    : "bg-[#F3F5F6] border-gray-300 text-gray-700 hover:bg-gray-200"
+        <SelectSeparator className="my-2 mt-1" />
+        <form onSubmit={handleSubmit(onSubmit)} className="grid gap-6 py-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="nom">Nom</Label>
+              <Input
+                id="nom"
+                {...register("nom")}
+                placeholder="Dupont"
+                className="focus-visible:ring-orange-300 h-10"
+              />
+              {errors.nom && (
+                <p className="text-sm text-red-500">{errors.nom.message}</p>
+              )}
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="prenom">Prénom</Label>
+              <Input
+                id="prenom"
+                {...register("prenom")}
+                placeholder="Jean"
+                className="focus-visible:ring-orange-300 h-10"
+              />
+              {errors.prenom && (
+                <p className="text-sm text-red-500">{errors.prenom.message}</p>
+              )}
+            </div>
+            <div className="space-y-2 col-span-full">
+              <Label htmlFor="adresse">Adresse</Label>
+              <Input
+                id="adresse"
+                {...register("adresse")}
+                placeholder="123 Rue Exemple, Alger"
+                className="focus-visible:ring-orange-300 h-10"
+              />
+              {errors.adresse && (
+                <p className="text-sm text-red-500">{errors.adresse.message}</p>
+              )}
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                {...register("email")}
+                placeholder="jean.dupont@example.com"
+                className="focus-visible:ring-orange-300 h-10"
+              />
+              {errors.email && (
+                <p className="text-sm text-red-500">{errors.email.message}</p>
+              )}
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="numeroTelephone">Téléphone</Label>
+              <Input
+                id="numeroTelephone"
+                {...register("numeroTelephone")}
+                placeholder="+213612345678"
+                className="focus-visible:ring-orange-300 h-10"
+              />
+              {errors.numeroTelephone && (
+                <p className="text-sm text-red-500">
+                  {errors.numeroTelephone.message}
+                </p>
+              )}
+            </div>
+          </div>
+          {initialData && (
+            <div className="space-y-2">
+              <Label htmlFor="statut">Statut</Label>
+              <Select
+                onValueChange={(value) =>
+                  setValue("statut", value as z.infer<typeof ClientStatut>)
                 }
-              `}
-                      >
-                        {checked && (
-                          <Check className="w-4 h-4 text-orange-600" />
-                        )}
-                        {perm}
-                      </label>
-                    );
-                  })}
-                </div>
-                {errors.permissions && (
-                  <p className="mt-1 text-sm text-red-500">
-                    {errors.permissions.message}
-                  </p>
-                )}
-              </div>
-            </>
-          ) : (
-            // ➕ Mode création : tout le formulaire
-            <>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="name" className="mb-1 block">
-                    Nom
-                  </Label>
-                  <Input
-                    {...register("name")}
-                    placeholder="John Doe"
-                    className="w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-300"
-                  />
-                  {errors.name && (
-                    <p className="mt-1 text-sm text-red-500">
-                      {errors.name.message}
-                    </p>
-                  )}
-                </div>
-
-                <div>
-                  <Label htmlFor="email" className="mb-1 block">
-                    Email
-                  </Label>
-                  <Input
-                    type="email"
-                    {...register("email")}
-                    placeholder="john@example.com"
-                    className="w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-300"
-                  />
-                  {errors.email && (
-                    <p className="mt-1 text-sm text-red-500">
-                      {errors.email.message}
-                    </p>
-                  )}
-                </div>
-
-                <div>
-                  <Label htmlFor="phone" className="mb-1 block">
-                    Téléphone
-                  </Label>
-                  <Input
-                    {...register("phone")}
-                    placeholder="+213..."
-                    className="w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-300"
-                  />
-                  {errors.phone && (
-                    <p className="mt-1 text-sm text-red-500">
-                      {errors.phone.message}
-                    </p>
-                  )}
-                </div>
-
-                <div>
-                  <Label htmlFor="password" className="mb-1 block">
-                    Mot de passe
-                  </Label>
-                  <Input
-                    type="password"
-                    {...register("password")}
-                    placeholder="Aa@123456"
-                    className="w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-300"
-                  />
-                  {errors.password && (
-                    <p className="mt-1 text-sm text-red-500">
-                      {errors.password.message}
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              <div>
-                <Label className="block mb-2">Permissions</Label>
-                <div className="flex flex-wrap gap-2">
-                  {PERMISSIONS.map((perm) => {
-                    const checked = permissions.includes(perm);
-                    return (
-                      <label
-                        key={perm}
-                        onClick={() => togglePermission(perm)}
-                        className={`cursor-pointer px-3 py-2 rounded-full text-sm flex items-center gap-1
-                border transition duration-200
-                ${
-                  checked
-                    ? "bg-orange-100 border-orange-500 text-orange-700"
-                    : "bg-[#F3F5F6] border-gray-300 text-gray-700 hover:bg-gray-200"
-                }
-              `}
-                      >
-                        {checked && (
-                          <Check className="w-4 h-4 text-orange-600" />
-                        )}
-                        {perm}
-                      </label>
-                    );
-                  })}
-                </div>
-                {errors.permissions && (
-                  <p className="mt-1 text-sm text-red-500">
-                    {errors.permissions.message}
-                  </p>
-                )}
-              </div>
-            </>
+                value={watch("statut")}
+              >
+                <SelectTrigger className="w-full focus-visible:ring-orange-300">
+                  <SelectValue placeholder="Sélectionner un statut" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ACTIVE">Actif</SelectItem>
+                  <SelectItem value="BLACKLISTED">Blacklisté</SelectItem>
+                </SelectContent>
+              </Select>
+              {errors.statut && (
+                <p className="text-sm text-red-500">{errors.statut.message}</p>
+              )}
+            </div>
           )}
-
-          <div className="flex justify-end space-x-2">
-            <Button 
-              type="button" 
-              variant="outline" 
+          <div className="space-y-2">
+            <div className="w-full flex justify-between items-center">
+              <Label>Commentaires</Label>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => append({ contenu: "" })}
+                className="w-fit text-orange-600 border-orange-300 hover:bg-orange-50 hover:text-[#F8A67E] rounded-md"
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Ajouter un commentaire
+              </Button>
+            </div>
+            {fields.map((field, index) => (
+              <div key={field.id} className="flex items-center gap-2">
+                <Textarea
+                  {...register(`commentaires.${index}.contenu`)}
+                  placeholder={`Commentaire ${index + 1}`}
+                  className="flex-1 min-h-[60px] focus-visible:ring-orange-300"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => remove(index)}
+                  className="text-red-500 hover:text-red-700"
+                  aria-label={`Supprimer le commentaire ${index + 1}`}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            ))}
+            {errors.commentaires && (
+              <p className="text-sm text-red-500">
+                {errors.commentaires?.message}
+              </p>
+            )}
+          </div>
+          <DialogFooter className="pt-4">
+            <Button
+              type="button"
+              variant={"ghost"}
               onClick={onClose}
-              disabled={isSubmitting}
+              style={{ background: "#F5F5F5", borderRadius: "8px" }}
+              className="text-gray-600 bg-neutral-100"
             >
               Annuler
             </Button>
-            <Button 
-              type="submit" 
-              style={{ background: "#F8A67E" }}
-              disabled={isSubmitting}
+            <Button
+              type="submit"
+              className="bg-[#F8A67E] hover:bg-orange-600"
+              style={{ background: "#F8A67E", borderRadius: "8px" }}
             >
-              {isSubmitting ? "Traitement..." : (initialData ? "Mettre à jour" : "Créer")}
+              {initialData ? "Mettre à jour" : "Créer"}
             </Button>
-          </div>
+          </DialogFooter>
         </form>
       </DialogContent>
     </Dialog>

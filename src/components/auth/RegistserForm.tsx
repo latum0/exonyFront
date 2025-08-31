@@ -1,4 +1,4 @@
-import { useState, FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -131,8 +131,8 @@ export function RegisterForm() {
       {/* Bouton de soumission */}
       <Button
         type="submit"
-         style={{background:"#F8A67E"}}  
-         className="w-full bg-[#F8A67E] hover:bg-[#f78d60] text-white font-semibold transition-colors duration-200"
+        style={{ background: "#F8A67E" }}
+        className="w-full bg-[#F8A67E] hover:bg-[#f78d60] text-white font-semibold transition-colors duration-200"
       >
         S’inscrire
       </Button>

@@ -25,7 +25,6 @@ export default function useLogin() {
         setTokens({
           accessToken,
           refreshToken,
-          user,
         })
       );
 

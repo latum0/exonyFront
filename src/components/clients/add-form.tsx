@@ -147,8 +147,8 @@ const UserFormDialog = ({ open, onClose, initialData, onSuccess }: Props) => {
       statut: data.statut,
       commentaires: data.commentaires
         ? data.commentaires.map((c) => ({
-            contenu: c.contenu ?? "",
-          }))
+          contenu: c.contenu ?? "",
+        }))
         : undefined,
     };
 
@@ -168,7 +168,7 @@ const UserFormDialog = ({ open, onClose, initialData, onSuccess }: Props) => {
       }
       onClose();
       onSuccess?.();
-    } catch (err) {
+    } catch (err: any) {
       const errorMessage =
         err?.data?.message ||
         err?.message ||

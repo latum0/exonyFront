@@ -1,8 +1,10 @@
 import { useState } from "react";
 import api from "@/api/axios";
 
-interface Fournisseur {
+// Export the interfaces so they can be used in other files
+export interface Fournisseur {
   id: string;
+  idFournisseur: number;
   nom: string;
   adresse: string;
   contact: string;
@@ -12,7 +14,7 @@ interface Fournisseur {
   updatedAt?: string;
 }
 
-interface FournisseurInput {
+export interface FournisseurInput {
   nom: string;
   adresse: string;
   contact: string;
@@ -20,7 +22,7 @@ interface FournisseurInput {
   email: string;
 }
 
-interface FournisseurUpdateInput extends Partial<FournisseurInput> {}
+export interface FournisseurUpdateInput extends Partial<FournisseurInput> { }
 
 interface UseFournisseursReturn {
   fournisseurs: Fournisseur[];
@@ -36,7 +38,7 @@ interface UseFournisseursReturn {
     id: string,
     data: FournisseurUpdateInput
   ) => Promise<Fournisseur | undefined>;
-  deleteFournisseur: (id: string) => Promise<boolean>;
+  deleteFournisseur: (id: string) => Promise<boolean>; // Changed from number to string
   resetFournisseur: () => void;
 }
 
@@ -127,13 +129,15 @@ export const useFournisseurs = (): UseFournisseursReturn => {
     }
   };
 
-  const deleteFournisseur = async (id: number) => {
+  // Fixed: Changed parameter type from number to string to match interface
+  const deleteFournisseur = async (id: string) => {
     setLoading(true);
     setError(null);
     try {
       await api.delete(`/fournisseurs/${id}`);
-      setFournisseurs((prev) => prev.filter((f) => f.idFournisseur !== id));
-      if (fournisseur?.idFournisseur === id) {
+      // Use string comparison for id, and idFournisseur for number comparison
+      setFournisseurs((prev) => prev.filter((f) => f.id !== id));
+      if (fournisseur?.id === id) {
         setFournisseur(null);
       }
       setLoading(false);
@@ -161,25 +165,3 @@ export const useFournisseurs = (): UseFournisseursReturn => {
     resetFournisseur,
   };
 };
-
-interface Fournisseur {
-   idFournisseur: number; 
-  nom: string;
-  adresse: string;
-  contact: string;
-  telephone: string;
-  email: string;
-
-  createdAt?: string;
-  updatedAt?: string;
-}
-
-interface FournisseurInput {
-  nom: string;
-  adresse: string;
-  contact: string;
-  telephone: string;
-  email: string;
-}
-
-export interface FournisseurUpdateInput extends Partial<FournisseurInput> {}
