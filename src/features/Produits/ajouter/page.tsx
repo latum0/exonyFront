@@ -121,7 +121,12 @@ export default function AjouterProduitPage() {
   const onSubmit = async (data: ProduitFormData) => {
     setIsSubmitting(true);
     try {
-      await dispatch(createProduit(data)).unwrap();
+      // Fix the remise undefined issue by providing a default value
+      const produitData = {
+        ...data,
+        remise: data.remise ?? 0  // Use 0 if remise is undefined
+      };
+      await dispatch(createProduit(produitData)).unwrap();
       toast.success("Produit créé avec succès!");
       navigate("/produits");
     } catch (error) {
