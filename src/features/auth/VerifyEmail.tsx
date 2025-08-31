@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Loader2, CheckCircle, XCircle, MailCheck } from "lucide-react";
 import useVerifyEmail from "@/hooks/useVerifyEmail";
+import type { JSX } from "react/jsx-runtime";
 
 export default function VerifyEmail() {
   const [searchParams] = useSearchParams();
@@ -52,8 +53,8 @@ export default function VerifyEmail() {
             Vérification d'email
           </CardTitle>
           <CardDescription className="text-center text-gray-600">
-            {isTokenPresent 
-              ? "Nous vérifions votre adresse email" 
+            {isTokenPresent
+              ? "Nous vérifions votre adresse email"
               : "Lien de vérification manquant"}
           </CardDescription>
         </CardHeader>
@@ -61,18 +62,17 @@ export default function VerifyEmail() {
           <div className="flex justify-center">
             {getStatusIcon()}
           </div>
-          
-          <div className={`text-center text-sm font-medium rounded-lg py-3 px-4 ${
-            status === 'loading' ? 'bg-blue-50 text-blue-700' :
-            status === 'success' ? 'bg-green-50 text-green-700' :
-            status === 'error' ? 'bg-red-50 text-red-700' :
-            'bg-gray-50 text-gray-700'
-          }`}>
+
+          <div className={`text-center text-sm font-medium rounded-lg py-3 px-4 ${status === 'loading' ? 'bg-blue-50 text-blue-700' :
+              status === 'success' ? 'bg-green-50 text-green-700' :
+                status === 'error' ? 'bg-red-50 text-red-700' :
+                  'bg-gray-50 text-gray-700'
+            }`}>
             {getStatusMessage()}
           </div>
 
           {status === 'success' && (
-            <Button 
+            <Button
               className="w-full bg-[#F8A67E] hover:bg-[#f79469] text-white font-semibold"
               onClick={() => window.location.href = '/'}
             >
@@ -82,14 +82,14 @@ export default function VerifyEmail() {
 
           {status === 'error' && (
             <div className="space-y-3">
-              <Button 
+              <Button
                 className="w-full bg-[#F8A67E] hover:bg-[#f79469] text-white font-semibold"
                 onClick={handleResendEmail}
               >
                 Renvoyer l'email de vérification
               </Button>
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 className="w-full"
                 onClick={() => window.location.href = '/login'}
               >
@@ -99,8 +99,8 @@ export default function VerifyEmail() {
           )}
 
           {!isTokenPresent && (
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               className="w-full"
               onClick={() => window.location.href = '/login'}
             >

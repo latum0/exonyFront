@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { PlusCircleIcon, CogIcon, PencilIcon, TrashIcon, Eye, Undo2 } from "lucide-react";
-import { useRetour } from "@/hooks/useRetour";
+import { useRetour, type Retour, type RetourInput } from "@/hooks/useRetour";
 import {
   Table,
   TableBody,
@@ -35,7 +35,7 @@ export const RetoursPage = () => {
     createRetour,
     updateRetour,
     deleteRetour,
-    filterRetours,
+
     resetRetour,
   } = useRetour();
 
@@ -51,13 +51,13 @@ export const RetoursPage = () => {
     pageSize: 5,
   });
 
-  const filteredRetours = Array.isArray(retours) 
+  const filteredRetours = Array.isArray(retours)
     ? retours.filter(r =>
-        (r.raisonRetour?.toLowerCase().includes(globalFilter.toLowerCase()) ||
-         r.commandeId?.toLowerCase().includes(globalFilter.toLowerCase()) ||
-         r.statutRetour?.toLowerCase().includes(globalFilter.toLowerCase())) &&
-        (statusFilter === "all" || r.statutRetour === statusFilter)
-      )
+      (r.raisonRetour?.toLowerCase().includes(globalFilter.toLowerCase()) ||
+        r.commandeId?.toLowerCase().includes(globalFilter.toLowerCase()) ||
+        r.statutRetour?.toLowerCase().includes(globalFilter.toLowerCase())) &&
+      (statusFilter === "all" || r.statutRetour === statusFilter)
+    )
     : [];
 
   const pageCount = Math.ceil(filteredRetours.length / pagination.pageSize);
@@ -190,7 +190,7 @@ export const RetoursPage = () => {
             </SelectContent>
           </Select>
         </div>
-        
+
         <div className="rounded-lg border shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
             <Table className="min-w-full">
@@ -213,7 +213,7 @@ export const RetoursPage = () => {
                   </TableHead>
                 </TableRow>
               </TableHeader>
-              
+
               <TableBody>
                 {loading ? (
                   <TableRow>
@@ -243,11 +243,10 @@ export const RetoursPage = () => {
                         {formatDate(r.dateRetour)}
                       </TableCell>
                       <TableCell className="py-3 px-4 whitespace-nowrap">
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          r.statutRetour === 'COMPLETED' ? 'bg-green-100 text-green-800' :
-                          r.statutRetour === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
-                          'bg-red-100 text-red-800'
-                        }`}>
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${r.statutRetour === 'COMPLETED' ? 'bg-green-100 text-green-800' :
+                            r.statutRetour === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
+                              'bg-red-100 text-red-800'
+                          }`}>
                           {r.statutRetour}
                         </span>
                       </TableCell>

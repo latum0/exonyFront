@@ -1,14 +1,14 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   PlusCircleIcon,
-  CogIcon,
+
   PencilIcon,
   TrashIcon,
   Eye,
   FactoryIcon,
 } from "lucide-react";
-import { useFournisseurs } from "@/hooks/useFournisseurs";
+import { useFournisseurs, type Fournisseur, type FournisseurInput } from "@/hooks/useFournisseurs";
 import {
   Table,
   TableBody,
@@ -59,12 +59,12 @@ export const FournisseursPage = () => {
 
   const filteredFournisseurs = Array.isArray(fournisseurs)
     ? fournisseurs.filter(
-        (f) =>
-          f.nom?.toLowerCase().includes(globalFilter.toLowerCase()) ||
-          f.contact?.toLowerCase().includes(globalFilter.toLowerCase()) ||
-          f.email?.toLowerCase().includes(globalFilter.toLowerCase()) ||
-          f.telephone?.includes(globalFilter)
-      )
+      (f) =>
+        f.nom?.toLowerCase().includes(globalFilter.toLowerCase()) ||
+        f.contact?.toLowerCase().includes(globalFilter.toLowerCase()) ||
+        f.email?.toLowerCase().includes(globalFilter.toLowerCase()) ||
+        f.telephone?.includes(globalFilter)
+    )
     : [];
 
   const pageCount = Math.ceil(
@@ -77,8 +77,8 @@ export const FournisseursPage = () => {
   const handleGetFournisseurs = async () => {
     try {
       await getFournisseurs();
-    } catch (error) {
-      setDataError(true);
+    } catch (error: any) {
+      throw new Error(error)
     }
   };
 
@@ -118,17 +118,18 @@ export const FournisseursPage = () => {
     setDeleteDialogOpen(true);
   };
 
- const confirmDelete = async () => {
-  if (fournisseurToDelete) {
-    await deleteFournisseur(fournisseurToDelete.idFournisseur); // ← Utiliser idFournisseur
-    setDeleteDialogOpen(false);
-    setFournisseurToDelete(null);
-    getFournisseurs();
-  }
-};
+  const confirmDelete = async () => {
+    if (fournisseurToDelete) {
+      await deleteFournisseur(fournisseurToDelete.idFournisseur.toString()); // ← Utiliser idFournisseur
+      setDeleteDialogOpen(false);
+      setFournisseurToDelete(null);
+      getFournisseurs();
+    }
+  };
 
   const handleEdit = (fournisseur: Fournisseur) => {
     setSelectedFournisseur({
+      id: fournisseur.idFournisseur.toString(),
       idFournisseur: fournisseur.idFournisseur,
       nom: fournisseur.nom,
       adresse: fournisseur.adresse,

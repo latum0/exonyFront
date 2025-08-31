@@ -3,6 +3,7 @@ import React from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Calendar, MapPin, User, CreditCard, Package, Hash } from "lucide-react";
+import type { CommandeResponseDto } from "@/hooks/useCommandes";
 
 interface CommandeDetailsModalProps {
   open: boolean;
@@ -68,12 +69,11 @@ export const CommandeDetailsModal: React.FC<CommandeDetailsModalProps> = ({
                 <span>Statut</span>
               </div>
               <p className="text-base">
-                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                  commande.statut === "EN_ATTENTE" ? "bg-yellow-100 text-yellow-800" :
+                <span className={`px-2 py-1 rounded-full text-xs font-medium ${commande.statut === "EN_ATTENTE" ? "bg-yellow-100 text-yellow-800" :
                   commande.statut === "EN_COURS" ? "bg-blue-100 text-blue-800" :
-                  commande.statut === "LIVREE" ? "bg-green-100 text-green-800" :
-                  "bg-red-100 text-red-800"
-                }`}>
+                    commande.statut === "LIVREE" ? "bg-green-100 text-green-800" :
+                      "bg-red-100 text-red-800"
+                  }`}>
                   {getStatutLabel(commande.statut)}
                 </span>
               </p>
@@ -107,7 +107,7 @@ export const CommandeDetailsModal: React.FC<CommandeDetailsModalProps> = ({
 
           <div className="space-y-3">
             <h4 className="font-semibold">Lignes de commande</h4>
-            {commande.ligne.map((ligne) => (
+            {commande.ligne.map((ligne: any) => (
               <div key={ligne.idLigne} className="bg-gray-50 p-3 rounded-md">
                 <div className="grid grid-cols-3 gap-4 text-sm">
                   <div>

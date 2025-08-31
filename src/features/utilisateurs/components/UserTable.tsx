@@ -31,6 +31,11 @@ interface User {
   email: string;
   phone: string;
   permissions: string[];
+  nom?: string;
+  prenom?: string;
+  adresse?: string;
+  numeroTelephone?: string;
+  statut?: string;
 }
 
 interface UserTableProps {
@@ -44,7 +49,6 @@ export const UserTable: React.FC<UserTableProps> = ({ users, loading }) => {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [isDeleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
-  const [isViewDialogOpen, setViewDialogOpen] = useState(false);
   const [detailedUser, setDetailedUser] = useState<User | null>(null);
   const [globalFilter, setGlobalFilter] = useState("");
   const [pagination, setPagination] = useState({
@@ -52,29 +56,27 @@ export const UserTable: React.FC<UserTableProps> = ({ users, loading }) => {
     pageSize: 5,
   });
 
- const filteredUsers = users.filter(user => {
-  try {
-    // Validation des données
-    if (!user || typeof user !== 'object') return false;
-    
-    const name = user.name ? String(user.name) : "";
-    const email = user.email ? String(user.email) : "";
-    const phone = user.phone ? String(user.phone) : "";
-    const permissions = Array.isArray(user.permissions) ? user.permissions : [];
-    
-    const searchTerm = globalFilter.toLowerCase();
-    
-    return (
-      name.toLowerCase().includes(searchTerm) ||
-      email.toLowerCase().includes(searchTerm) ||
-      phone.includes(globalFilter) ||
-      permissions.join(", ").toLowerCase().includes(searchTerm)
-    );
-  } catch (error) {
-    console.error("Erreur lors du filtrage de l'utilisateur:", user, error);
-    return false;
-  }
-});
+  const filteredUsers = users.filter(user => {
+    try {
+      // Validation des données
+      if (!user || typeof user !== 'object') return false;
+      const name = user.name ? String(user.name) : "";
+      const email = user.email ? String(user.email) : "";
+      const phone = user.phone ? String(user.phone) : "";
+      const permissions = Array.isArray(user.permissions) ? user.permissions : [];
+      const searchTerm = globalFilter.toLowerCase();
+      return (
+        name.toLowerCase().includes(searchTerm) ||
+        email.toLowerCase().includes(searchTerm) ||
+        phone.includes(globalFilter) ||
+        permissions.join(", ").toLowerCase().includes(searchTerm)
+      );
+    } catch (error) {
+      console.error("Erreur lors du filtrage de l'utilisateur:", user, error);
+      return false;
+    }
+  });
+
   const pageCount = Math.ceil(filteredUsers.length / pagination.pageSize);
   const paginatedUsers = filteredUsers.slice(
     pagination.pageIndex * pagination.pageSize,
@@ -86,7 +88,6 @@ export const UserTable: React.FC<UserTableProps> = ({ users, loading }) => {
       const actionResult = await dispatch(getUserById(id));
       if (getUserById.fulfilled.match(actionResult)) {
         setDetailedUser(actionResult.payload);
-        setViewDialogOpen(true);
       } else {
         console.error("Erreur lors de la récupération utilisateur");
       }
@@ -131,7 +132,6 @@ export const UserTable: React.FC<UserTableProps> = ({ users, loading }) => {
           className="max-w-sm border-gray-300 rounded-md shadow-sm bg-neutral-50"
         />
       </div>
-
       <div className="rounded-lg border shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <Table className="min-w-full">
@@ -154,7 +154,6 @@ export const UserTable: React.FC<UserTableProps> = ({ users, loading }) => {
                 </TableHead>
               </TableRow>
             </TableHeader>
-
             <TableBody>
               {loading ? (
                 <TableRow>
@@ -197,7 +196,7 @@ export const UserTable: React.FC<UserTableProps> = ({ users, loading }) => {
                         <Button
                           variant="outline"
                           size="sm"
-                                                      className="text-green-600 hover:text-green-600/90 "
+                          className="text-green-600 hover:text-green-600/90 "
                           onClick={() => handleEdit(user)}
                         >
                           <PencilIcon className="h-4 w-4" />
@@ -205,7 +204,7 @@ export const UserTable: React.FC<UserTableProps> = ({ users, loading }) => {
                         <Button
                           variant="outline"
                           size="sm"
-                           className="text-[#2c97f5]  hover:text-[#2c97f5]"
+                          className="text-[#2c97f5]  hover:text-[#2c97f5]"
                           onClick={() => handleViewDetails(user.id)}
                         >
                           <Eye className="h-4 w-4" />
@@ -213,7 +212,7 @@ export const UserTable: React.FC<UserTableProps> = ({ users, loading }) => {
                         <Button
                           variant="outline"
                           size="sm"
-                         className="text-red-500  hover:text-red-500"
+                          className="text-red-500  hover:text-red-500"
                           onClick={() => handleDeleteClick(user)}
                         >
                           <TrashIcon className="h-4 w-4" />
@@ -227,7 +226,6 @@ export const UserTable: React.FC<UserTableProps> = ({ users, loading }) => {
           </Table>
         </div>
       </div>
-
       <div className="flex items-center justify-between px-2 py-4">
         <div className="flex-1 text-sm text-muted-foreground">
           {filteredUsers.length} utilisateur(s) trouvé(s)
@@ -290,23 +288,20 @@ export const UserTable: React.FC<UserTableProps> = ({ users, loading }) => {
           </div>
         </div>
       </div>
-
       <UserFormDialog
         open={isDialogOpen}
         onClose={() => {
           setDialogOpen(false);
           setSelectedUser(null);
         }}
-        initialData={selectedUser}
+        initialData={selectedUser as any}
       />
-
       <DeleteConfirmationModal
         open={isDeleteDialogOpen}
         onConfirm={confirmDelete}
         onCancel={cancelDelete}
         userName={userToDelete?.name}
       />
-
       <UserDetailsModal
         user={detailedUser}
         isOpen={!!detailedUser}
